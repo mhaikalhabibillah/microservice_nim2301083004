@@ -1,0 +1,31 @@
+stages:
+  - docker_build
+  - deploy
+
+variables:
+  DOCKER_REGISTRY: registry.gitlab.com
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE/produk-service
+
+before_script:
+  - echo "Running GitLab CI/CD Pipeline with Docker Multi-Stage"
+
+docker_build:
+  stage: docker_build
+  image: docker:24.0.6
+  services:
+    - docker:dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $DOCKER_REGISTRY
+    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA .
+    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA
+  only:
+    - main
+
+# Optional: deploy ke staging
+# deploy_staging:
+#   stage: deploy
+#   script:
+#     - echo "Deploying to staging server..."
+#     - ssh user@staging-server "docker pull $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA && docker run -d -p 8087:8087 $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
+#   only:
+#     - main
